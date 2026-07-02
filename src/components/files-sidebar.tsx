@@ -63,7 +63,7 @@ export function FilesSidebar() {
       </SidebarContent>
 
       {!isCollapsed && (
-        <SidebarFooter className="p-3">
+        <SidebarFooter className="overflow-hidden p-3 transition-[max-height,opacity,padding] duration-200 ease-linear group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:p-0">
           <div className="h-2 w-full rounded-full bg-muted">
             <div className="h-full w-2/5 rounded-full bg-primary" />
           </div>
