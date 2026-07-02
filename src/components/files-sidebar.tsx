@@ -37,7 +37,7 @@ export function FilesSidebar() {
 
   return (
     <Sidebar collapsible="icon" position="sticky">
-      <SidebarHeader className="border-b group-data-[collapsible=icon]:hidden">
+      <SidebarHeader className="border-b overflow-hidden max-h-14 transition-[max-height,opacity,padding] duration-200 ease-linear group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:p-0">
         <SidebarInput placeholder="Search..." />
       </SidebarHeader>
 
