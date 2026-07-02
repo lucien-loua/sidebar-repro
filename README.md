@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# sidebar-repro
 
-## Getting Started
+Reproduction of a sidebar collapse animation issue with the shadcn/ui sidebar component, using `collapsible="icon"` and a custom `position="sticky"` variant.
 
-First, run the development server:
+**Status: fixed.** The original bug is kept in the git history if you want to see the broken state. Details below.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Original thread: https://x.com/luu_loua/status/2048756475166674969
+
+## The issue
+
+Collapsing the sidebar to icon mode had two problems:
+
+1. The sidebar container snapped to its collapsed width instantly, no transition
+2. The search field in the header used `display: none` (`group-data-[collapsible=icon]:hidden`), which can't be animated, so it popped in and out and made the nav items below shift abruptly
+
+## The fix
+
+Credit to [@shadcn](https://x.com/shadcn) who debugged this with me.
+
+**1. Add a width transition on the sticky sidebar container** (`sidebar.tsx`)
+
+The `fixed` variant already had it, the `sticky` branch didn't:
+
+```diff
+- ? "sticky top-0 hidden h-svh w-(--sidebar-width) shrink-0 md:flex"
++ ? "sticky top-0 hidden h-svh w-(--sidebar-width) shrink-0 transition-[width] duration-200 ease-linear md:flex"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**2. Replace `display: none` with animatable properties** (`files-sidebar.tsx`)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`display` can't transition. Animating `max-height`, `opacity` and `padding` instead, driven by the `group-data-[collapsible=icon]:*` pattern:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```diff
+- <SidebarHeader className="border-b group-data-[collapsible=icon]:hidden">
++ <SidebarHeader className="border-b overflow-hidden max-h-14 transition-[max-height,opacity,padding] duration-200 ease-linear group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:p-0">
+```
 
-## Learn More
+The same treatment applies to anything conditionally rendered on collapse state. The footer here was originally gated with `{!isCollapsed && ...}`, which is a React unmount and has the same popping problem, so it now uses the same CSS pattern.
 
-To learn more about Next.js, take a look at the following resources:
+## Takeaway
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+For state-based show/hide animations with the shadcn sidebar, prefer `group-data-[collapsible=icon]:*` utilities on animatable properties (`max-height`, `opacity`, `padding`, `width`) over `hidden` or conditional rendering. The state lives in the DOM via data attributes, CSS does the rest.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Running it
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+bun install
+bun dev
+```
